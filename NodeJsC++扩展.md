@@ -57,6 +57,231 @@ algorithm.intersectionPositioning(jsonData);
 
 
 
+
+
+```c++
+//基于NAPI Demo
+//#include <napi.h> windows linux 都可执行 对Node版本没有强一直要求
+Napi::Value intersectionPositioning(const Napi::CallbackInfo &info)
+
+  {
+
+   Napi::Env env = info.Env();
+
+ if (info.Length() <= 0 || !info[0].IsObject())
+
+ {
+
+    Napi::TypeError::New(env, "Object expected").ThrowAsJavaScriptException();
+
+  }
+
+  Napi::Object obj = info[0].ToObject();
+
+
+
+   int pointLen = (int)obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "pointLen"))).As<Napi::Number>().DoubleValue();
+
+  int azimuthNLength = (int)obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "azimuthNLength"))).As<Napi::Number>().DoubleValue();
+
+  double mindistance = obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "mindistance"))).As<Napi::Number>().DoubleValue();
+
+
+
+ Napi::Array input_array = obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "angleindex"))).As<Napi::Array>();
+
+ int length = input_array.Length();
+
+
+
+int *angleindex = new int[length];
+
+ for (int i = 0; i < length; i++)
+
+  {
+
+    angleindex[i] = static_cast<Napi::Value>(input_array[i]).As<Napi::Number>().DoubleValue();
+
+   }
+
+
+
+  input_array = obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "azimuthN"))).As<Napi::Array>();
+
+   length = input_array.Length();
+
+   float *azimuthN = new float[length];
+
+   for (int i = 0; i < length; i++)
+
+   {
+
+     azimuthN[i] = (float)static_cast<Napi::Value>(input_array[i]).As<Napi::Number>().DoubleValue();
+
+   }
+
+
+
+   input_array = obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "lat"))).As<Napi::Array>();
+
+    length = input_array.Length();
+
+   double *lat = new double[length];
+
+   for (int i = 0; i < length; i++)
+
+    {
+
+     lat[i] = static_cast<Napi::Value>(input_array[i]).As<Napi::Number>().DoubleValue();
+
+  }
+
+
+
+  input_array = obj.Get(static_cast<napi_value>(Napi::String::New(info.Env(), "lon"))).As<Napi::Array>();
+
+   length = input_array.Length();
+
+   double *lon = new double[length];
+
+    for (int i = 0; i < length; i++)
+
+    {
+
+     lon[i] = static_cast<Napi::Value>(input_array[i]).As<Napi::Number>().DoubleValue();
+
+    }
+
+   double *result = new double[100];
+
+   int resultLen = 0;
+
+   SingleStationLocate(pointLen, lon, lat, angleindex, azimuthNLength, azimuthN, result, mindistance, resultLen);
+
+
+   Napi::Object objOut = Napi::Object::New(env);
+
+    Napi::Number num = Napi::Number::New(env, resultLen);
+
+   Napi::Array resultArray = Napi::Array::New(env, resultLen);
+
+
+
+  for (int i = 0; i < resultLen; i++)
+
+    {
+
+    resultArray[i] = result[i];
+
+  }
+
+
+
+   objOut.Set(Napi::String::New(env, "resultLen"), resultLen);
+
+   objOut.Set(Napi::String::New(env, "result"), resultArray);
+
+   //obj.Set(Napi::String::New(env, "msg"), info[0].ToString());
+
+    return objOut;
+
+  }
+```
+
+
+
+```c++
+//基于Node Api 的Demo windows linux 都可以执行 但是要求版一致 //Welcome to Node.js v12.13.1.
+#include <node.h>
+
+namespace datas
+{
+    using namespace v8;
+    using namespace std;
+
+    using v8::Context;
+    using v8::Exception;
+    using v8::Function;
+    using v8::FunctionCallbackInfo;
+    using v8::FunctionTemplate;
+    using v8::Isolate;
+    using v8::Local;
+    using v8::Number;
+    using v8::Object;
+    using v8::String;
+    using v8::Value;
+
+    static void Datas(const FunctionCallbackInfo<Value> &args)
+    {
+        Isolate *isolate = args.GetIsolate();
+        Local<Array> input_array = Local<Array>::Cast(args[0]);
+        int length = input_array->Length();
+        double* angleindex = new double[length];
+        for (int i = 0; i < length; i++)
+        {
+            angleindex[i] = input_array->Get(i).As<Number>()->Value();
+        }
+        input_array = Local<Array>::Cast(args[1]);
+        length = input_array->Length();
+        double* azimuthN = new double[length];
+        for (int i = 0; i < length; i++)
+        {
+            azimuthN[i] = input_array->Get(i).As<Number>()->Value();
+        }
+        double mindistance = args[2].As<Number>()->Value();
+        int pointLen = args[3].As<Number>()->Value();
+
+        // 声明一个V8的Object类型的变量
+        Local<Object> object = Object::New(isolate);
+        // 声明一个V8的Array类型的变量
+        Local<Array> angleindexArray = Array::New(isolate);
+        Local<Array> azimuthNArray = Array::New(isolate);
+        Local<Number> mindistanceNumber = Number::New(isolate, mindistance);
+        Local<Number> pointLenNumber = Number::New(isolate,pointLen);
+        // 给array赋值
+        //sizeof(array) / sizeof(array[0])
+        length=sizeof(angleindex);
+        //printf("angleindex %d",length);
+        for (int i = 0; i <length; ++i)
+        {
+            angleindexArray->Set(i, Number::New(isolate, angleindex[i]));
+        }
+        length=sizeof(azimuthN);
+        printf("azimuthN %d",length);
+        for (int i = 0; i <length; ++i)
+        {
+            azimuthNArray->Set(i, Number::New(isolate, azimuthN[i]));
+        }
+        object->Set(String::NewFromUtf8(isolate, "angleindex"), angleindexArray);
+        object->Set(String::NewFromUtf8(isolate, "azimuthN"),azimuthNArray);
+        object->Set(String::NewFromUtf8(isolate, "mindistance"),  mindistanceNumber);
+        object->Set(String::NewFromUtf8(isolate, "pointLen"), pointLenNumber);
+        args.GetReturnValue().Set(object);
+    }
+
+    static void init(Local<Object> exports, Local<Object> module)
+    {
+        // NODE_SET_METHOD(module, "exports", Datas);
+
+        NODE_SET_METHOD(exports, "data", Datas);
+    }
+
+    //     void init1(Local<Object> exports) {
+    //   NODE_SET_METHOD(exports, "hello", Method);
+    // }
+
+    // NODE_MODULE(hello, init1)
+
+    NODE_MODULE(NODE_GYP_MODULE_NAME, init)
+} // namespace datas
+```
+
+
+
+
+
+
+
 ```javascript
 安装 node-gyp
 
