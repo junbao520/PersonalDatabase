@@ -1,0 +1,20 @@
+[flake8]
+ignore = E402,W291,W292,W391,N803
+exclude =
+    *migrations*,
+    # python related
+    *.pyc,
+    .git,
+    __pycache__,
+    *.log,
+    *.html,
+
+max-line-length=100
+max-complexity=10
+format=pylint
+show_source = True
+statistics = True
+count = True
+
+
+flake8 `git diff --cached --name-only`
